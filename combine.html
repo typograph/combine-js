@@ -1,0 +1,83 @@
+<html>
+    <head>
+        <style>         
+            body {
+                text-align: center;
+                min-width: 500px;
+                }
+            div.area {
+                margin-left: auto;
+                margin-right: auto;
+                width: 100%;
+                background-color: #ccc;
+                border-radius: 10px;
+                padding: 50px;
+                width: 500px;
+                }
+            table {
+                border-collapse: collapse;
+                }
+            table.grid {
+                margin-left: auto;
+                margin-right: auto;
+                background-color: white;
+                border-radius: 10px;
+                }
+            table.invisible {
+                background-color: transparent;
+                }                
+            .grid tr {
+                width: 40px;
+                height: 40px;
+                }
+            .grid td {
+                width: 40px;
+                height: 40px;
+                border-radius: 10px;
+/*                 border: 1px solid black */
+                }
+            table.scale {
+                margin-left: auto;
+                margin-right: auto;
+                margin-bottom: 0px;
+                }          
+            .scale td {
+                width: 20px;
+                height: 20px;
+                border-radius: 5px;
+/*                 border: 1px solid black */
+                }
+            td.spacer {
+                width: 40px;
+                }
+        </style>
+    </head>
+    <body>
+        <div class='area'>
+            <table>
+                <tr>
+                    <td rowspan=2>
+                        <table class="grid">
+                            <tbody id='field'/>
+                        </table>
+                    </td>
+                    <td class="spacer" rowspan=2>
+                    </td>
+                    <td>
+                        <table class="grid invisible">
+                            <tbody id="next"/>
+                        </table>
+                    </td>
+                </tr>
+                <tr>
+                    <td valign="bottom">
+                        <table class="scale">
+                            <tbody id="scale"/>
+                        </table>
+                    </td>
+                </tr>
+            </table>
+        </div>
+        <script src='combine.js'></script>
+    </body>
+</html>
