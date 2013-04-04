@@ -13,33 +13,10 @@
 
   Cell = (function() {
 
-    function Cell(row, column, dom) {
-      var _this = this;
-      this.row = row;
-      this.column = column;
-      this.dom = dom;
-      this.anim_upgrade = function(step) {
-        return Cell.prototype.anim_upgrade.apply(_this, arguments);
-      };
-      this.anim_reset = function(step) {
-        return Cell.prototype.anim_reset.apply(_this, arguments);
-      };
-      this.sync = function() {
-        return Cell.prototype.sync.apply(_this, arguments);
-      };
-      this.isEmpty = function() {
-        return Cell.prototype.isEmpty.apply(_this, arguments);
-      };
-      this.set = function(tier) {
-        _this.tier = tier;
-        return Cell.prototype.set.apply(_this, arguments);
-      };
-      this.upgrade = function() {
-        return Cell.prototype.upgrade.apply(_this, arguments);
-      };
-      this.reset = function() {
-        return Cell.prototype.reset.apply(_this, arguments);
-      };
+    function Cell(parent) {
+      this.dom = document.createElement('div');
+      this.dom.innerHTML = " ";
+      parent.appendChild(this.dom);
       this.reset();
     }
 
@@ -92,10 +69,10 @@
 
   Figure = (function() {
 
-    function Figure(c1, c2, width, dom) {
+    function Figure(c1, c2, row1, row2) {
       var _this = this;
-      this.width = width;
-      this.dom = dom;
+      this.row1 = row1;
+      this.row2 = row2;
       this.sync = function() {
         return Figure.prototype.sync.apply(_this, arguments);
       };
@@ -112,7 +89,7 @@
         return Figure.prototype.moveLeft.apply(_this, arguments);
       };
       this.state = [0, c2, c1];
-      this.index = (this.width - 1) / 2 | 0;
+      this.index = (this.row1.length - 1) / 2 | 0;
       this.sync();
     }
 
@@ -126,7 +103,7 @@
     };
 
     Figure.prototype.moveRight = function() {
-      if (this.index < this.width - 2) {
+      if (this.index < this.row1.length - 2) {
         this.index += 1;
       }
       return this.sync();
@@ -148,34 +125,29 @@
     };
 
     Figure.prototype.clear = function() {
-      var cell, row1, row2, _i, _j, _len, _len1, _ref, _ref1, _results;
-      row1 = this.dom.childNodes.item(1);
-      row2 = this.dom.childNodes.item(2);
-      _ref = row1.childNodes;
+      var cell, _i, _j, _len, _len1, _ref, _ref1, _results;
+      _ref = this.row1;
       for (_i = 0, _len = _ref.length; _i < _len; _i++) {
         cell = _ref[_i];
-        cell.style.backgroundColor = colors[0];
+        cell.reset();
       }
-      _ref1 = row2.childNodes;
+      _ref1 = this.row2;
       _results = [];
       for (_j = 0, _len1 = _ref1.length; _j < _len1; _j++) {
         cell = _ref1[_j];
-        _results.push(cell.style.backgroundColor = colors[0]);
+        _results.push(cell.reset());
       }
       return _results;
     };
 
     Figure.prototype.sync = function() {
-      var row1, row2;
       this.clear();
-      row1 = this.dom.childNodes.item(1);
-      row2 = this.dom.childNodes.item(2);
       if (this.state[0] !== 0) {
-        row1.childNodes.item(this.index + 1).style.backgroundColor = colors[this.state[0]];
+        this.row1[this.index + 1].set(this.state[0]);
       }
-      row2.childNodes.item(this.index + 1).style.backgroundColor = colors[this.state[1]];
+      this.row2[this.index + 1].set(this.state[1]);
       if (this.state[2] !== 0) {
-        return row2.childNodes.item(this.index).style.backgroundColor = colors[this.state[2]];
+        return this.row2[this.index].set(this.state[2]);
       }
     };
 
@@ -186,7 +158,7 @@
   Game = (function() {
 
     function Game(width, height) {
-      var ntable, r,
+      var c, ntable, r,
         _this = this;
       this.width = width;
       this.height = height;
@@ -239,12 +211,14 @@
       ntable = document.getElementById('next');
       r = document.createElement('tr');
       ntable.appendChild(r);
-      this.next_1 = document.createElement('td');
-      r.appendChild(this.next_1);
+      c = document.createElement('td');
+      r.appendChild(c);
+      this.next_1 = new Cell(c);
       r = document.createElement('tr');
       ntable.appendChild(r);
-      this.next_2 = document.createElement('td');
-      r.appendChild(this.next_2);
+      c = document.createElement('td');
+      r.appendChild(c);
+      this.next_2 = new Cell(c);
       this.createNext();
       this.newTurn();
     }
@@ -284,11 +258,11 @@
         for (j = _j = 0, _ref1 = this.width - 1; 0 <= _ref1 ? _j <= _ref1 : _j >= _ref1; j = 0 <= _ref1 ? ++_j : --_j) {
           cell = document.createElement('td');
           row.appendChild(cell);
-          this.cells[i][j] = new Cell(i, j, cell);
+          this.cells[i][j] = new Cell(cell);
         }
       }
       safetyRow = this.gtable.childNodes.item(2);
-      return safetyRow.style.borderBottom = "1px solid red";
+      return safetyRow.style.borderBottom = "2px solid red";
     };
 
     Game.prototype.keyDown = function(e) {
@@ -519,8 +493,8 @@
 
     Game.prototype.createNext = function() {
       this.nextfigure = [this.randomColor(), this.randomColor()];
-      this.next_1.style.backgroundColor = colors[this.nextfigure[0]];
-      return this.next_2.style.backgroundColor = colors[this.nextfigure[1]];
+      this.next_1.set(this.nextfigure[0]);
+      return this.next_2.set(this.nextfigure[1]);
     };
 
     Game.prototype.randomColor = function() {
@@ -528,7 +502,7 @@
     };
 
     Game.prototype.newTurn = function() {
-      this.figure = new Figure(this.nextfigure[0], this.nextfigure[1], this.width, this.gtable);
+      this.figure = new Figure(this.nextfigure[0], this.nextfigure[1], this.cells[this.height + 1], this.cells[this.height]);
       this.createNext();
       return this.dropping = false;
     };

@@ -29,42 +29,47 @@ upgrade_colors = [
     ]
 
 class Cell
-    constructor: (@row,@column,@dom) -> @reset()
+    constructor: (parent) -> 
+        @dom = document.createElement('div')
+        @dom.innerHTML = " "
+        parent.appendChild(@dom)
+        @reset()
 
-    reset: =>
+    reset: ->
         @tier = 0
         @cluster = 0
         @sync()
     
-    upgrade: =>
+    upgrade: ->
         @tier += 1
         if @tier == colors.length 
             @tier = 1 # ring colors
         @sync()
         
-    set: (@tier) => @sync()
+    set: (@tier) -> @sync()
     
-    isEmpty: => return @tier == 0
+    isEmpty: -> return @tier == 0
         
-    sync: => @dom.style.backgroundColor = colors[@tier]
+    sync: -> 
+        @dom.style.backgroundColor = colors[@tier]
     
-    anim_reset: (step) => 
+    anim_reset: (step) -> 
         if step > 3
             @reset()
         else
             @dom.style.backgroundColor = reset_colors[@tier][step]
             
-    anim_upgrade: (step) =>
+    anim_upgrade: (step) ->
         if step > 3
             @upgrade()
         else
             @dom.style.backgroundColor = upgrade_colors[@tier][step]
 
 class Figure
-    constructor: (c1,c2,@width,@dom) ->
+    constructor: (c1,c2,@row1,@row2) ->
         # Clockwise
         @state = [0, c2, c1]
-        @index = (@width-1)/2 | 0
+        @index = (@row1.length-1)/2 | 0
         @sync()
     
     moveLeft: =>
@@ -75,7 +80,7 @@ class Figure
         @sync()
     
     moveRight: =>
-        if @index < @width-2
+        if @index < @row1.length-2
             @index += 1
         @sync()
     
@@ -92,23 +97,18 @@ class Figure
         @sync()
 
     clear: =>
-        row1 = @dom.childNodes.item(1)
-        row2 = @dom.childNodes.item(2)
-        for cell in row1.childNodes
-            cell.style.backgroundColor = colors[0]
-        for cell in row2.childNodes
-            cell.style.backgroundColor = colors[0]
+        for cell in @row1
+            cell.reset()
+        for cell in @row2
+            cell.reset()
         
     sync: =>
         @clear()
-        row1 = @dom.childNodes.item(1)
-        row2 = @dom.childNodes.item(2)
-
         if @state[0] != 0    
-            row1.childNodes.item(@index+1).style.backgroundColor = colors[@state[0]]
-        row2.childNodes.item(@index+1).style.backgroundColor = colors[@state[1]]
+            @row1[@index+1].set(@state[0])
+        @row2[@index+1].set(@state[1])
         if @state[2] != 0
-            row2.childNodes.item(@index).style.backgroundColor = colors[@state[2]]
+            @row2[@index].set(@state[2])
 
 class Game        
 
@@ -127,12 +127,14 @@ class Game
         ntable = document.getElementById('next')
         r = document.createElement('tr')
         ntable.appendChild(r)
-        @next_1 = document.createElement('td')
-        r.appendChild(@next_1)
+        c = document.createElement('td')
+        r.appendChild(c)
+        @next_1 = new Cell(c)
         r = document.createElement('tr')
         ntable.appendChild(r)
-        @next_2 = document.createElement('td')
-        r.appendChild(@next_2)
+        c = document.createElement('td')
+        r.appendChild(c)
+        @next_2 = new Cell(c)
 
         @createNext()        
         @newTurn()
@@ -171,10 +173,10 @@ class Game
                 cell = document.createElement('td')
                 row.appendChild(cell)
                 
-                @cells[i][j] = new Cell(i,j,cell)
+                @cells[i][j] = new Cell(cell)
 
         safetyRow = @gtable.childNodes.item(2)
-        safetyRow.style.borderBottom = "1px solid red"
+        safetyRow.style.borderBottom = "2px solid red"
         
     keyDown: (e) =>
         KEY_DOWN    = 40
@@ -337,14 +339,14 @@ class Game
         
     createNext: =>
         @nextfigure = [@randomColor(),@randomColor()]
-        @next_1.style.backgroundColor = colors[@nextfigure[0]]
-        @next_2.style.backgroundColor = colors[@nextfigure[1]]    
+        @next_1.set(@nextfigure[0])
+        @next_2.set(@nextfigure[1])
     
     randomColor: =>
         return 1 + Math.floor(Math.random()*(@maxtier-1))
     
     newTurn: =>
-        @figure = new Figure(@nextfigure[0],@nextfigure[1],@width,@gtable)
+        @figure = new Figure(@nextfigure[0],@nextfigure[1],@cells[@height+1],@cells[@height])
         @createNext()
         @dropping = false
 
